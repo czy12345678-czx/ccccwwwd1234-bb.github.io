@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>掌上校园</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
+  html,body{
+    height:100%;
+    overflow:hidden;
+    touch-action: pan-y;
+  }
+  .page-stack{
+    width:100%;
+    height:100vh;
+    position:relative;
+  }
+  .page-wrap{
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    transition:transform 0.3s ease-out;
+    background:#f5f7fa;
+  }
+  .page-hidden{
+    transform:translateX(100%);
+    z-index: 1;
+  }
+  .page-active{
+    z-index: 10;
+  }
+  #homePage{
+    overflow-y:auto;
+    overflow-x:hidden;
+    z-index:2;
+    background:#f5f7fa;
+  }
+  .top-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 16px;
+    background:#ffffff;
+  }
+  .top-bar .back{font-size:20px;color:#333}
+  .top-bar .title{font-size:18px;font-weight:500;color:#333}
+  .top-bar .more{font-size:20px;color:#333}
+
+  .banner-img{
+    width:100%;
+    min-height:140px;
+    height:auto;
+    display:block;
+    object-fit:cover;
+    background:#eef2f7;
+    position:relative;
+    cursor:pointer;
+  }
+
+  .user-area{
+    background:#ffffff;
+    padding:16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .user-left{display:flex;align-items:center;gap:12px}
+  .avatar{width:44px;height:44px;border-radius:50%;background:#e5e5e5;overflow:hidden}
+  .avatar img{width:100%;height:100%;object-fit:cover}
+  .username{font-size:20px;font-weight:500;color:#222}
+  .user-info-link{color:#999;font-size:15px}
+  .section{
+    background:#ffffff;
+    margin-top:10px;
+  }
+  .section-header{
+    padding:14px 16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .section-title{
+    font-size:17px;
+    color:#222;
+    border-left:4px solid #3683eb;
+    padding-left:8px;
+    font-weight:500;
+  }
+  .section-arrow{
+    font-size:16px;color:#999;
+  }
+  .grid-container{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:16px 4px;
+    padding:0 8px 20px;
+  }
+  .grid-item{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    padding:4px 0;
+  }
+  .grid-icon{
+    width:46px;
+    height:46px;
+    border-radius:9px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .grid-icon svg{
+    width:34px;
+    height:34px;
+    display:block;
+  }
+  .grid-text{
+    font-size:13px;
+    color:#333;
+    text-align:center;
+  }
+  .c1{background:#e8f7ec;color:#26b960;}
+  .c2{background:#f5f5f5;color:#515151;}
+  .c3{background:#ffe9e9;color:#e64343;}
+  .c4{background:#fff8e5;color:#f7a42b;}
+  .c5{background:#eaf1ff;color:#3683eb;}
+  .float-search{
+    position:fixed;
+    bottom:22px;
+    right:16px;
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    background:#fff;
+    box-shadow:0 2px 9px rgba(0,0,0,0.12);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:20px;
+    color:#3683eb;
+  }
+  .breadcrumb-bar{
+    position: fixed;
+    top:0;
+    left:0;
+    right:0;
+    z-index:100;
+    background:#e8f0fd;
+    padding:12px 16px;
+  }
+  .breadcrumb{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:15px;
+    color:#666;
+  }
+  .breadcrumb .current{
+    color:#333;
+  }
+  .breadcrumb .home-icon{
+    color:#3683eb;
+  }
+  .breadcrumb .divider{
+    color:#aaa;
+  }
+  .page-title{padding:16px;font-size:22px;font-weight:700;color:#222;margin-top:46px;}
+  .user-header{background:#fff;padding:16px 12px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px;margin-top:46px;}
+  .leave-card{background:#fff;margin:0 12px 12px;border-radius:12px;padding:18px 16px;box-shadow:0 1px 3px rgba(0,0,0,.05);cursor:pointer}
+  .leave-card:active{transform:scale(.98);background:#f9f9f9}
+  .card-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+  .type{font-size:18px;font-weight:600;color:#222}
+  .time{font-size:14px;color:#999;text-align:right}
+  .info{font-size:15px;color:#666;margin-bottom:6px}
+  .status{font-size:15px;font-weight:500;color:#3683eb;margin-top:6px}
+  .scroll-wrap{
+    height:100vh;
+    overflow-y:auto;
+    padding-bottom:40px;
+  }
+  #detailPage{display:none;background:#f5f7fa;min-height:100vh}
+  .edit-input{width:100%;border:1px solid #3683eb;border-radius:4px;padding:4px 6px;font-size:17px;color:#333;outline:0}
+  .avatar-placeholder{width:40px;height:40px;border-radius:50%;background:#f5f5f5}
+  .gender-icon-img{width:28px;height:28px;display:inline-block;vertical-align:middle}
+  .leave-info-section{background:#fff;margin-top:10px;padding:16px 12px;position:relative}
+  .section-title-leave{font-size:20px;font-weight:700;color:#333;margin-bottom:12px;padding-left:6px;border-left:5px solid #3683eb;display:flex;justify-content:space-between;align-items:center}
+  :root{--passed-size:52px}
+  .passed-stamp{position:absolute;top:20px;right:16px;width:var(--passed-size);height:var(--passed-size);border-radius:50%;z-index:50;background:0 0;pointer-events:none}
+  .passed-stamp::after{content:"";position:absolute;left:0;top:0;right:0;bottom:0;border-radius:50%;border:1px solid #8fcfbf;z-index:51}
+  .passed-stamp::before{content:"";position:absolute;left:4px;top:4px;right:4px;bottom:4px;border-radius:50%;border:1px dashed #a8d5cb;z-index:52}
+  .passed-stamp .label{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(18deg) scale(.6);padding:10px 20px;border:1px solid #a8d5cb;border-radius:8px;background:#fff;color:#88b8aa;font-weight:700;font-size:16px;white-space:nowrap;z-index:54}
+  .passed-stamp .label .inner-dash{position:absolute;left:3px;top:3px;right:3px;bottom:3px;border-radius:6px;border:1px dashed #a8d5cb;z-index:52}
+  .passed-stamp .label .text{position:relative;z-index:55}
+  .info-item{margin-bottom:10px;font-size:17px;line-height:1.4;display:flex;align-items:center}
+  .info-label{color:#999;min-width:unset;padding-right:6px;font-size:17px}
+  .info-value{color:#333;font-size:17px}
+  .process-section{background:#fff;margin-top:10px;padding:12px}
+  :root{--circle-size:18px}
+  .process-item{position:relative;padding-left:28px;padding-bottom:12px}
+  .process-check{position:absolute;left:0;top:6px;width:var(--circle-size);height:var(--circle-size);border-radius:50%;border:2px solid #3683eb;background:#fff;display:flex;align-items:center;justify-content:center;color:#3683eb;font-size:12px;z-index:20}
+  .process-item::before{content:"";position:absolute;left:calc(var(--circle-size)/2);top:calc(6px + var(--circle-size)/2);width:2px;height:calc(100% - 15px);background:#3683eb;z-index:10}
+  .process-item:last-child::before{display:none}
+  .process-content{margin-left:10px;display:flex;justify-content:space-between;align-items:flex-start}
+  .process-name{font-size:17px;color:#333}
+  .process-status{font-size:15px;color:#30bd58}
+  .process-person{font-size:14px;color:#666;margin-top:4px;display:inline-flex;gap:8px;align-items:center}
+  .process-time{font-size:12px;color:#999;white-space:nowrap;margin-top:4px}
+  .auto-fill-btn{
+    display:inline-block;
+    margin-left:8px;
+    padding:4px 10px;
+    background:#3683eb;
+    color:#fff;
+    border:none;
+    border-radius:6px;
+    font-size:13px;
+    white-space:nowrap;
+    vertical-align:middle;
+    display:none;
+  }
+  .auto-fill-btn.show{display:inline-block;}
+  .edit-person-btn{
+    padding:4px 8px;
+    font-size:12px;
+    background:#3683eb;
+    color:#fff;
+    border-radius:6px;
+    border:none;
+    cursor:pointer;
+  }
+  .autofill-sink{
+    position:absolute;
+    left:-10000px;
+    top:auto;
+    width:1px;
+    height:1px;
+    overflow:hidden;
+    opacity:0;
+  }
+</style>
+</head>
+<body>
+
+<div class="autofill-sink" aria-hidden="true">
+  <input autocomplete="username" />
+  <input autocomplete="name" />
+  <input autocomplete="email" />
+  <input autocomplete="current-password" />
+  <input autocomplete="new-password" />
+</div>
+
+<svg style="position:absolute;width:0;height:0;overflow:hidden;" aria-hidden="true">
+  <symbol id="paperIcon" viewBox="0 0 48 48">
+    <ellipse cx="24" cy="40" rx="14" ry="4" fill="currentColor" />
+    <path d="M14 12 L35 12 Q37 12 37 14 L37 34 Q37 36 35 36 L14 36 Q12 36 12 34 L12 14 Q12 12 14 12 Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M35 12 L37 12 L37 18 Q37 20 35 20 L35 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M15 17 L18 16 L21 18 L24 16.5 L27 18.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+    <path d="M13 33 L36 33 L36 39 Q36 40 34 40 L14 40 Q12 40 12 39 L12 33 Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+    <line x1="19" y1="23" x2="21.4" y2="25.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+    <line x1="21.4" y1="23" x2="19" y2="25.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+    <line x1="26.6" y1="23" x2="29" y2="25.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+    <line x1="29" y1="23" x2="26.6" y2="25.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+    <path d="M19.5 29 Q24 26.5 28.5 29" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+    <line x1="10" y1="23.5" x2="11.6" y2="25.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+    <line x1="11.6" y1="23.5" x2="10" y2="25.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+    <line x1="36.4" y1="31" x2="38.8" y2="33.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+    <line x1="38.8" y1="31" x2="36.4" y2="33.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+  </symbol>
+
+  <symbol id="iconClassSchedule" viewBox="0 0 48 48">
+    <rect x="8" y="10" width="32" height="28" rx="4" fill="#eaf1ff" stroke="#3683eb" stroke-width="2" />
+    <path d="M8 18h32M14 10v6M34 10v6" stroke="#3683eb" stroke-width="2" stroke-linecap="round" />
+    <path d="M14 24h4M22 24h4M14 30h4M22 30h4" stroke="#3683eb" stroke-width="2" stroke-linecap="round" />
+  </symbol>
+
+  <symbol id="iconLibrary" viewBox="0 0 48 48">
+    <path d="M6 14c0-2 2-4 4-4h10l2 4 2-4h10c2 0 4 2 4 4v20H24L6 34V14z" fill="#ffe9ec" stroke="#e64343" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M10 18h8M10 24h8M30 18h8M30 24h8" stroke="#e64343" stroke-width="2" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="iconVote" viewBox="0 0 48 48">
+    <rect x="10" y="8" width="28" height="32" rx="4" fill="#fff7e6" stroke="#f7a42b" stroke-width="2"/>
+    <path d="M16 16h16M16 24h10M16 32h16" stroke="#f7a42b" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="14" cy="24" r="1.6" fill="#f7a42b"/>
+  </symbol>
+
+  <symbol id="iconExam" viewBox="0 0 48 48">
+    <rect x="10" y="8" width="28" height="32" rx="4" fill="#ffe9ec" stroke="#e64343" stroke-width="2"/>
+    <path d="M16 16h16M16 24h16M16 32h10" stroke="#e64343" stroke-width="2" stroke-linecap="round"/>
+    <path d="M30 30l3 3 6-6" stroke="#e64343" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+
+  <symbol id="iconCardConsume" viewBox="0 0 48 48">
+    <rect x="6" y="14" width="36" height="20" rx="4" fill="#f5f5f5" stroke="#515151" stroke-width="2"/>
+    <path d="M6 22h36" stroke="#515151" stroke-width="2"/>
+    <circle cx="14" cy="30" r="2" fill="#515151"/>
+    <path d="M20 30h6" stroke="#515151" stroke-width="2" stroke-linecap="round"/>
+    <path d="M30 18h4" stroke="#515151" stroke-width="2" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="iconLostFound" viewBox="0 0 48 48">
+    <path d="M8 32c0-2 2-4 4-4h14l10 4v4H8v-4z" fill="#f5f5f5" stroke="#515151" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="34" cy="14" r="6" fill="none" stroke="#515151" stroke-width="2"/>
+    <path d="M32 12h4l-2 3v2" stroke="#515151" stroke-width="2" stroke-linecap="round" fill="none"/>
+    <circle cx="34" cy="19" r="0.8" fill="#515151"/>
+  </symbol>
+
+  <symbol id="iconBus" viewBox="0 0 48 48">
+    <path d="M8 18c0-4 4-8 10-8h12c6 0 10 4 10 8v14H8V18z" fill="#eaf1ff" stroke="#3683eb" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M8 24h32M14 18h6M26 18h6" stroke="#3683eb" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="14" cy="34" r="3" fill="#3683eb"/>
+    <circle cx="34" cy="34" r="3" fill="#3683eb"/>
+  </symbol>
+
+  <symbol id="iconInvoice" viewBox="0 0 48 48">
+    <path d="M10 8h28v32l-4-4-4 4-4-4-4 4-4-4-4 4V8z" fill="#eaf1ff" stroke="#3683eb" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M16 16h16M16 24h10M16 32h16" stroke="#3683eb" stroke-width="2" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="iconRepair" viewBox="0 0 48 48">
+    <path d="M32 10l6 6-12 12-6-6 12-12z" fill="#e8f7ec" stroke="#26b960" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M14 26l8 8M10 34l4 4" stroke="#26b960" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="35" cy="13" r="1.4" fill="#26b960"/>
+  </symbol>
+</svg>
+
+<div class="page-stack">
+  <div id="homePage" class="page-wrap page-active">
+    <div class="top-bar">
+      <span class="back">←</span>
+      <span class="title">掌上校园</span>
+      <span class="more">⋮</span>
+    </div>
+
+    <!-- 仅保留图片元素（可点击上传或通过拖拽更换），视觉上没有按钮 -->
+    <div style="position:relative;">
+      <img class="banner-img" id="bannerImg" src="school.jpg" alt="校园" title="点击或拖拽图片以更换封面（已隐藏按钮，图片会永久保存）">
+      <input type="file" id="bannerFileInput" accept="image/*" style="display:none" />
+    </div>
+
+    <div class="user-area">
+      <div class="user-left">
+        <div class="avatar"><img src="avatar.jpg" alt="头像"></div>
+        <div class="username" id="homeUsername">学生a</div>
+      </div>
+      <div class="user-info-link">个人信息 ></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">教学科研</div>
+        <span class="section-arrow">∨</span>
+      </div>
+      <div class="grid-container">
+        <div class="grid-item">
+          <div class="grid-icon c1">
+            <svg><use href="#iconClassSchedule"/></svg>
+          </div>
+          <div class="grid-text">我的课表</div>
+        </div>
+        <div class="grid-item">
+          <div class="grid-icon c2">
+            <svg><use href="#paperIcon"/></svg>
+          </div>
+          <div class="grid-text">期末报告</div>
+        </div>
+        <div class="grid-item">
+          <div class="grid-icon c2">
+            <svg><use href="#paperIcon"/></svg>
+          </div>
+          <div class="grid-text">移动教务</div>
+        </div>
+        <div class="grid-item">
+          <div class="grid-icon c3">
+            <svg><use href="#iconLibrary"/></svg>
+          </div>
+          <div class="grid-text">移动图书馆</div>
+        </div>
+        <div class="grid-item">
+          <div class="grid-icon c2">
+            <svg><use href="#paperIcon"/></svg>
+          </div>
+          <div class="grid-text">实验系统</div>
+        </div>
+        <div class="grid-item">
+          <div class="grid-icon c2">
+            <svg><use href="#paperIcon"/></svg>
+          </div>
+          <div class="grid-text">心理系统</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">办公应用</div>
+        <span class="section-arrow">∨</span>
+      </div>
+      <div class="grid-container">
+        <div class="grid-item">
+          <div class="grid-icon c2">
+            <svg><use href="#paperIcon"/></svg>
+          </div>
+          <div class="grid-text">通知公示</div>
+        </div>
+        <div class="grid-item">
+          <div class="grid-icon c4">
+            <svg><use href="#iconVote"/></svg>
+          </div>
+          <div class="grid-text">投票/问卷</div>
+        </div>
+        <div class="grid-item" onclick="goLeavePage()">
+          <div class="grid-icon c2">
+            <svg><use href="#paperIcon"/></svg>
+          </div>
+          <div class="grid-text">学生请假申请</div>
+        </div>
+        <div class="grid-item">
+          <div class="grid-icon c2">
+            <svg><use href="#paperIcon"/></svg>
+          </div>
+          <div class="grid-text">移动迎新</div>
+        </div>
+        <div class="grid-item">
+          <div class="grid-icon c2">
+            <svg><use href="#paperIcon"/></svg>
+          </div>
+          <div class="grid-text">勤工助学</div>
+        </div>
+        <div class="grid-item">
+          <div class="grid-icon c2">
+            <svg><use href="#paperIcon"/></svg>
+          </div>
+          <div class="grid-text">一表通系统</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">数据服务</div>
+        <span class="section-arrow">∨</span>
+      </div>
+      <div class="grid-container">
+        <div class="grid-item">
+          <div class="grid-icon c3">
+            <svg><use href="#iconExam"/></svg>
+          </div>
+          <div class="grid-text">我的考试</div>
+        </div>
+        <div class="grid-item">
+          <div class="grid-icon c2">
+            <svg><use href="#paperIcon"/></svg>
+          </div>
+          <div class="grid-text">我的成绩</div>
+        </div>
+        <div class="grid-item">
+          <div class="grid-icon c2">
+            <svg><use href="#iconCardConsume"/></svg>
+          </div>
+          <div class="grid-text">一卡通消费</div>
+        </div>
+        <div class="grid-item">
+          <div class="grid-icon c2">
+            <svg><use href="#paperIcon"/></svg>
+          </div>
+          <div class="grid-text">我的科研</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">校园助手</div>
+        <span class="section-arrow">∨</span>
+      </div>
+      <div class="grid-container">
+        <div class="grid-item">
+          <div class="grid-icon c2">
+            <svg><use href="#iconLostFound"/></svg>
+          </div>
+          <div class="grid-text">失物招领</div>
+        </div>
+        <div class="grid-item">
+          <div class="grid-icon c5">
+            <svg><use href="#iconBus"/></svg>
+          </div>
+          <div class="grid-text">学校班车</div>
+        </div>
+        <div class="grid-item">
+          <div class="grid-icon c2">
+            <svg><use href="#paperIcon"/></svg>
+          </div>
+          <div class="grid-text">校历</div>
+        </div>
+        <div class="grid-item">
+          <div class="grid-icon c5">
+            <svg><use href="#iconInvoice"/></svg>
+          </div>
+          <div class="grid-text">发票助手</div>
+        </div>
+        <div class="grid-item">
+          <div class="grid-icon c1">
+            <svg><use href="#iconRepair"/></svg>
+          </div>
+          <div class="grid-text">维修申请</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="float-search">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"/>
+        <path d="m21 21-4.3-4.3"/>
+      </svg>
+    </div>
+  </div>
+
+  <div id="leaveRootPage" class="page-wrap page-hidden">
+    <div id="listPage">
+      <div class="breadcrumb-bar">
+        <div class="breadcrumb">
+          <svg class="home-icon" viewBox="0 0 24 24" style="width:16px;height:16px;fill:#3683eb;">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zM12 11.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+          </svg>
+          <span>首页</span>
+          <span class="divider">></span>
+          <span>请假管理</span>
+        </div>
+      </div>
+      <div class="scroll-wrap">
+        <div class="page-title">申请记录</div>
+        <div class="leave-card" onclick="showDetail(0)">
+          <div class="card-row"><div class="type">其他</div><div class="time">2026-04-30<br>09:49:26</div></div>
+          <div class="info">开始时间：2026-04-30 12:30:00</div>
+          <div class="info">结束时间：2026-04-30 15:30:00</div>
+          <div class="info">理由：</div>
+          <div class="status">审核通过</div>
+        </div>
+        <div class="leave-card" onclick="showDetail(1)">
+          <div class="card-row"><div class="type">其他</div><div class="time">2026-04-24 16:28:15</div></div>
+          <div class="info">开始时间：2026-04-24 17:00:00</div>
+          <div class="info">结束时间：2026-04-24 22:00:00</div>
+          <div class="info">理由：</div>
+          <div class="status">审核通过</div>
+        </div>
+        <div class="leave-card" onclick="showDetail(2)">
+          <div class="card-row"><div class="type">病假</div><div class="time">2026-05-02<br>08:15:33</div></div>
+          <div class="info">开始时间：2026-05-02 09:00:00</div>
+          <div class="info">结束时间：2026-05-02 18:00:00</div>
+          <div class="info">理由：</div>
+          <div class="status">审核通过</div>
+        </div>
+        <div class="leave-card" onclick="showDetail(3)">
+          <div class="card-row"><div class="type">事假</div><div class="time">2026-05-04 14:22:10</div></div>
+          <div class="info">开始时间：2026-05-04 15:00:00</div>
+          <div class="info">结束时间：2026-05-04 17:30:00</div>
+          <div class="info">理由：</div>
+          <div class="status">审核通过</div>
+        </div>
+      </div>
+    </div>
+    <div id="detailPage">
+      <div class="breadcrumb-bar">
+        <div class="breadcrumb">
+          <svg class="home-icon" viewBox="0 0 24 24" style="width:16px;height:16px;fill:#3683eb;">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zM12 11.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+          </svg>
+          <span>首页</span>
+          <span class="divider">></span>
+          <span>请假管理</span>
+          <span class="divider">></span>
+          <span class="current">请假管理</span>
+        </div>
+      </div>
+      <div class="scroll-wrap">
+        <div class="user-header">
+          <div class="avatar-placeholder"></div>
+          <svg class="gender-icon-img" viewBox="0 0 24 24" fill="#3683eb">
+            <path d="M14 4h6v6h-2V6.414l-4.293 4.293-1.414-1.414L16.586 5H14V4zM10 10a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM10 12a2 2 0 1 1 0 4 2 2 0 0 1 0-4z" />
+          </svg>
+        </div>
+        <section class="leave-info-section">
+          <div class="section-title-leave">
+            <span>请假信息</span>
+            <div class="passed-stamp"><div class="label"><div class="inner-dash"></div><span class="text">已通过</span></div></div>
+          </div>
+          <div class="info-item"><span class="info-label">请假类型：</span><span class="info-value" data-field="type">其他</span></div>
+          <div class="info-item"><span class="info-label">请假去向：</span><span class="info-value" data-field="dest"></span></div>
+          <div class="info-item"><span class="info-label">详细地址：</span><span class="info-value" data-field="addr"></span></div>
+          <div class="info-item"><span class="info-label">开始时间：</span><span class="info-value" data-field="start">2026-04-24 17:00:00</span></div>
+          <div class="info-item"><span class="info-label">结束时间：</span><span class="info-value" data-field="end">2026-04-24 22:00:00</span></div>
+          <div class="info-item"><span class="info-label">统计时长：</span><span class="info-value" data-field="duration">5小时</span></div>
+          <div class="info-item"><span class="info-label">紧急联系人：</span><span class="info-value" data-field="contact"></span></div>
+          <div class="info-item"><span class="info-label">紧急联系人电话：</span><span class="info-value" data-field="phone"></span></div>
+          <div class="info-item"><span class="info-label">请假理由：</span><span class="info-value" data-field="reason">外出买东西</span></div>
+          <div class="info-item"><span class="info-label">请假状态：</span><span class="info-value" data-field="status" style="color:#3683eb">审核通过</span></div>
+          <div class="info-item"><span class="info-label">销假状态：</span><span class="info-value" data-field="cancelStatus"></span></div>
+          <div class="info-item">
+            <span class="info-label">请假附件：</span>
+            <span class="info-value" data-field="attachment"></span>
+            <button class="auto-fill-btn" id="autoFillBtn">一键填充</button>
+          </div>
+        </section>
+        <section class="process-section">
+          <div class="section-title-leave" style="border-left:6px solid #3683eb;padding-left:8px;">办理进度</div>
+          <div class="process-item">
+            <div class="process-check done">✓</div>
+            <div class="process-content">
+              <div>
+                <div><span class="process-name">申请</span><span class="process-status">申请</span></div>
+                <div class="process-person" data-edit="person" data-person="student">学生a</div>
+              </div>
+              <div class="process-time" data-edit="time">2026-04-24 16:28</div>
+            </div>
+          </div>
+          <div class="process-item">
+            <div class="process-check done">✓</div>
+            <div class="process-content">
+              <div>
+                <div><span class="process-name">辅导员审核</span><span class="process-status">审核通过</span></div>
+                <div class="process-person" data-edit="person" data-person="teacher">辅导员b</div>
+              </div>
+              <div class="process-time" data-edit="time">2026-04-24 16:50</div>
+            </div>
+          </div>
+          <div class="process-item">
+            <div class="process-check current">◉</div>
+            <div class="process-content"><div><span class="process-name">结束</span></div></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const homePage = document.getElementById('homePage');
+const leaveRootPage = document.getElementById('leaveRootPage');
+const listPage = document.getElementById('listPage');
+const detailPage = document.getElementById('detailPage');
+const homeUsernameEl = document.getElementById('homeUsername');
+
+let pageStack = ['home'];
+
+function goLeavePage(){
+  pageStack.push('leaveList');
+  leaveRootPage.classList.remove('page-hidden');
+  leaveRootPage.classList.add('page-active');
+  homePage.classList.remove('page-active');
+}
+
+function goBack(){
+  if(pageStack.length <=1) return;
+  pageStack.pop();
+  const top = pageStack[pageStack.length-1];
+  if(top === 'home'){
+    leaveRootPage.classList.add('page-hidden');
+    leaveRootPage.classList.remove('page-active');
+    homePage.classList.add('page-active');
+  }else if(top === 'leaveList'){
+    detailPage.style.display = 'none';
+    listPage.style.display = 'block';
+  }
+}
+
+let globalStartX = 0;
+document.addEventListener('touchstart',e=>{
+  globalStartX = e.touches[0].clientX;
+},{passive:true});
+
+document.addEventListener('touchend',e=>{
+  const endX = e.changedTouches[0].clientX;
+  const dx = endX - globalStartX;
+
+  if(homePage.classList.contains('page-active')){
+    if(dx < -80){
+      goLeavePage();
+    }
+  }else{
+    if(dx > 80){
+      goBack();
+    }
+  }
+},{passive:true});
+
+let currentIndex = 0;
+let isEditing = false;
+let clickCount = 0;
+const autoFillBtn = document.getElementById('autoFillBtn');
+
+const STORAGE_KEY = "LEAVE_FORM_DATA_20250507";
+const STUDENT_KEY = "LEAVE_STUDENT_NAME_V1";
+const TEACHER_KEY = "LEAVE_TEACHER_NAME_V1";
+const BANNER_KEY  = "LEAVE_BANNER_IMAGE_V1";
+const DEFAULT_STUDENT = "学生a";
+const DEFAULT_TEACHER = "辅导员b";
+const TODAY_STR = new Date().toDateString();
+
+function safeText(value, defaultValue){
+  const text = String(value ?? '').trim();
+  return text || defaultValue;
+}
+
+function getStudentName() {
+  try {
+    const v = localStorage.getItem(STUDENT_KEY);
+    return safeText(v, DEFAULT_STUDENT);
+  } catch (e) {
+    return DEFAULT_STUDENT;
+  }
+}
+
+function getTeacherName() {
+  try {
+    const v = localStorage.getItem(TEACHER_KEY);
+    return safeText(v, DEFAULT_TEACHER);
+  } catch (e) {
+    return DEFAULT_TEACHER;
+  }
+}
+
+function updateHomeUsername(name){
+  if(homeUsernameEl){
+    homeUsernameEl.textContent = safeText(name, DEFAULT_STUDENT);
+  }
+}
+
+function syncStudentTeacherNames() {
+  const studentName = getStudentName();
+  const teacherName = getTeacherName();
+
+  document.querySelectorAll('[data-person="student"]').forEach(el => {
+    el.textContent = studentName;
+  });
+  document.querySelectorAll('[data-person="teacher"]').forEach(el => {
+    el.textContent = teacherName;
+  });
+
+  updateHomeUsername(studentName);
+}
+
+function loadForm() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const data = JSON.parse(saved);
+      if (data.date === TODAY_STR) {
+        const typeEl = document.querySelector('[data-field="type"]');
+        if (typeEl) typeEl.innerText = data.type || "其他";
+        const startEl = document.querySelector('[data-field="start"]');
+        if (startEl) startEl.innerText = data.start || "";
+        const endEl = document.querySelector('[data-field="end"]');
+        if (endEl) endEl.innerText = data.end || "";
+        const durEl = document.querySelector('[data-field="duration"]');
+        if (durEl) durEl.innerText = data.duration || "";
+        const reasonEl = document.querySelector('[data-field="reason"]');
+        if (reasonEl) reasonEl.innerText = data.reason || "外出买东西";
+        const statusEl = document.querySelector('[data-field="status"]');
+        if (statusEl) statusEl.innerText = data.status || "审核通过";
+        const destEl = document.querySelector('[data-field="dest"]');
+        if (destEl) destEl.innerText = data.dest || "";
+        const addrEl = document.querySelector('[data-field="addr"]');
+        if (addrEl) addrEl.innerText = data.addr || "";
+        const contactEl = document.querySelector('[data-field="contact"]');
+        if (contactEl) contactEl.innerText = data.contact || "";
+        const phoneEl = document.querySelector('[data-field="phone"]');
+        if (phoneEl) phoneEl.innerText = data.phone || "";
+        const cancelEl = document.querySelector('[data-field="cancelStatus"]');
+        if (cancelEl) cancelEl.innerText = data.cancelStatus || "";
+        const attachEl = document.querySelector('[data-field="attachment"]');
+        if (attachEl) attachEl.innerText = data.attachment || "";
+      }
+    }
+  } catch (e) {
+    console.error('loadForm error', e);
+  }
+
+  syncStudentTeacherNames();
+  loadBanner();
+}
+
+function persistStudentName(name){
+  const val = safeText(name, DEFAULT_STUDENT);
+  try { localStorage.setItem(STUDENT_KEY, val); } catch (e) {}
+  document.querySelectorAll('[data-person="student"]').forEach(el => el.textContent = val);
+  updateHomeUsername(val);
+}
+
+function persistTeacherName(name){
+  const val = safeText(name, DEFAULT_TEACHER);
+  try { localStorage.setItem(TEACHER_KEY, val); } catch (e) {}
+  document.querySelectorAll('[data-person="teacher"]').forEach(el => el.textContent = val);
+}
+
+function saveForm() {
+  const studentName = getStudentName();
+  const teacherName = getTeacherName();
+
+  const data = {
+    date: TODAY_STR,
+    type: document.querySelector('[data-field="type"]').innerText,
+    start: document.querySelector('[data-field="start"]').innerText,
+    end: document.querySelector('[data-field="end"]').innerText,
+    duration: document.querySelector('[data-field="duration"]').innerText,
+    reason: document.querySelector('[data-field="reason"]').innerText,
+    status: document.querySelector('[data-field="status"]').innerText,
+    dest: document.querySelector('[data-field="dest"]').innerText,
+    addr: document.querySelector('[data-field="addr"]').innerText,
+    contact: document.querySelector('[data-field="contact"]').innerText,
+    phone: document.querySelector('[data-field="phone"]').innerText,
+    cancelStatus: document.querySelector('[data-field="cancelStatus"]').innerText,
+    attachment: document.querySelector('[data-field="attachment"]').innerText,
+    student: studentName,
+    teacher: teacherName,
+    time1: document.querySelectorAll('[data-edit="time"]')[0]?.innerText || "",
+    time2: document.querySelectorAll('[data-edit="time"]')[1]?.innerText || ""
+  };
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.error('saveForm error', e);
+  }
+}
+
+function fmt(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+
+         String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':00';
+}
+
+function calcDuration() {
+  const startText = document.querySelector('[data-field="start"]').innerText.trim();
+  const endText = document.querySelector('[data-field="end"]').innerText.trim();
+  const start = new Date(startText);
+  const end = new Date(endText);
+  if (isNaN(start) || isNaN(end) || end <= start) return '时长异常';
+  const ms = end - start;
+  const hours = Math.floor(ms / (1000 * 60 * 60));
+  return hours + '小时';
+}
+
+function refreshDuration() {
+  const durEl = document.querySelector('[data-field="duration"]');
+  if (durEl) durEl.innerText = calcDuration();
+}
+
+function showDetail(index) {
+  currentIndex = index;
+  pageStack.push('leaveDetail');
+  loadForm();
+  refreshDuration();
+  listPage.style.display = 'none';
+  detailPage.style.display = 'block';
+}
+
+let startX = 0, startY = 0;
+detailPage.addEventListener('touchstart', e => { startX = e.touches[0].clientX; startY = e.touches[0].clientY; });
+detailPage.addEventListener('touchend', e => {
+  let dx = e.changedTouches[0].clientX - startX;
+  let dy = e.changedTouches[0].clientY;
+  if (dx > 70 && Math.abs(dy) < 60) {
+    goBack();
+  }
+});
+
+detailPage.addEventListener('click', e => {
+  if (isEditing) return;
+  if (e.target.closest('.edit-input') || e.target.closest('.section-title-leave')) return;
+  clickCount++;
+  if (clickCount >= 5) {
+    enterEdit();
+    clickCount = 0;
+  }
+  setTimeout(() => { clickCount = 0; }, 800);
+});
+
+detailPage.addEventListener('click', e => {
+  if (!isEditing) return;
+  if (e.target.closest('.breadcrumb-bar') || e.target.closest('.user-header')) saveAll();
+});
+
+function enterEdit() {
+  if (isEditing) return;
+  isEditing = true;
+  autoFillBtn.classList.add('show');
+
+  document.querySelectorAll('[data-field]').forEach(el => {
+    let v = el.innerText;
+    el.innerHTML = `<input type="text" class="edit-input" autocomplete="off" value="${v.replace(/"/g,'&quot;')}">`;
+  });
+
+  document.querySelectorAll('[data-edit="time"]').forEach(el => {
+    let v = el.innerText;
+    el.innerHTML = `<input type="text" class="edit-input" autocomplete="off" value="${v.replace(/"/g,'&quot;')}">`;
+  });
+
+  document.querySelectorAll('[data-edit="person"]').forEach((el, idx) => {
+    const existing = el.querySelector('.edit-person-btn');
+    if (existing) existing.remove();
+
+    const btn = document.createElement('button');
+    btn.className = 'edit-person-btn';
+    btn.type = 'button';
+    btn.textContent = '编辑';
+
+    btn.addEventListener('click', () => {
+      const cur = el.textContent.trim();
+      const newName = prompt('修改名称：', cur);
+      if (newName === null) return;
+
+      const safeName = safeText(newName, cur);
+      const who = el.getAttribute('data-person') || (idx === 0 ? 'student' : 'teacher');
+
+      if (who === 'student') {
+        persistStudentName(safeName);
+      } else {
+        persistTeacherName(safeName);
+      }
+
+      saveForm();
+    });
+
+    el.style.display = 'inline-flex';
+    el.style.alignItems = 'center';
+    el.style.gap = '8px';
+    el.appendChild(btn);
+  });
+
+  const startInput = document.querySelector('[data-field="start"] .edit-input');
+  const endInput = document.querySelector('[data-field="end"] .edit-input');
+
+  function onTimeChange() {
+    const durInput = document.querySelector('[data-field="duration"] .edit-input');
+    if (!durInput) return;
+
+    const startText = startInput ? startInput.value.trim() : '';
+    const endText = endInput ? endInput.value.trim() : '';
+    const start = new Date(startText);
+    const end = new Date(endText);
+    if (isNaN(start) || isNaN(end) || end <= start) {
+      durInput.value = '时长异常';
+      return;
+    }
+    const ms = end - start;
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    durInput.value = hours + '小时';
+  }
+
+  if (startInput) startInput.addEventListener('input', onTimeChange);
+  if (endInput) endInput.addEventListener('input', onTimeChange);
+}
+
+function saveAll() {
+  if (!isEditing) return;
+  isEditing = false;
+  autoFillBtn.classList.remove('show');
+
+  document.querySelectorAll('.edit-input').forEach(input => {
+    const p = input.parentElement;
+    p.innerText = input.value;
+  });
+
+  document.querySelectorAll('[data-edit="person"]').forEach(el => {
+    const btn = el.querySelector('.edit-person-btn');
+    if (btn) btn.remove();
+    el.style.display = '';
+    el.style.gap = '';
+  });
+
+  refreshDuration();
+  saveForm();
+}
+
+/* ---------- 修改点：一键填充只保留整点（分钟统一为 00） ---------- */
+function truncateToHour(d) {
+  const r = new Date(d);
+  r.setMinutes(0, 0, 0);
+  return r;
+}
+
+autoFillBtn.addEventListener('click', () => {
+  // 以当前时间为基准，体现原逻辑（开始时间 = now -1h，结束 = +2h），
+  // 但对所有时间进行截断（分钟设为0，秒设为0）。
+  const now = new Date();
+
+  // 原先 leaveStart = now - 1h
+  let leaveStart = new Date(now.getTime() - 60 * 60 * 1000);
+  leaveStart = truncateToHour(leaveStart);
+
+  // leaveEnd = leaveStart + 2h
+  let leaveEnd = new Date(leaveStart.getTime() + 2 * 60 * 60 * 1000);
+  leaveEnd = truncateToHour(leaveEnd);
+
+  // applyTime 原先是 leaveStart -30min，截断后会向下取整至整小时
+  let applyTime = new Date(leaveStart.getTime() - 30 * 60 * 1000);
+  applyTime = truncateToHour(applyTime);
+
+  // checkTime 原先是 leaveStart -10min，截断后也向下取整
+  let checkTime = new Date(leaveStart.getTime() - 10 * 60 * 1000);
+  checkTime = truncateToHour(checkTime);
+
+  // 填充到页面（优先填写编辑输入框，否则写入文本节点）
+  const startInp = document.querySelector('[data-field="start"] .edit-input');
+  const endInp = document.querySelector('[data-field="end"] .edit-input');
+  if (startInp && endInp) {
+    startInp.value = fmt(leaveStart);
+    endInp.value = fmt(leaveEnd);
+  } else {
+    const startEl = document.querySelector('[data-field="start"]');
+    const endEl = document.querySelector('[data-field="end"]');
+    if (startEl) startEl.innerText = fmt(leaveStart);
+    if (endEl) endEl.innerText = fmt(leaveEnd);
+  }
+
+  const times = document.querySelectorAll('[data-edit="time"] .edit-input');
+  if (times.length >= 2) {
+    times[0].value = fmt(applyTime).substring(0,16);
+    times[1].value = fmt(checkTime).substring(0,16);
+  } else {
+    const timeEls = document.querySelectorAll('[data-edit="time"]');
+    if (timeEls[0]) timeEls[0].innerText = fmt(applyTime).substring(0,16);
+    if (timeEls[1]) timeEls[1].innerText = fmt(checkTime).substring(0,16);
+  }
+
+  const durInput = document.querySelector('[data-field="duration"] .edit-input');
+  if (durInput) {
+    // 计算基于当前（可能是输入）值的时长
+    const startText = (document.querySelector('[data-field="start"] .edit-input') || {}).value || '';
+    const endText = (document.querySelector('[data-field="end"] .edit-input') || {}).value || '';
+    const start = new Date(startText);
+    const end = new Date(endText);
+    if (!isNaN(start) && !isNaN(end) && end > start) {
+      const ms = end - start;
+      const hours = Math.floor(ms / (1000 * 60 * 60));
+      durInput.value = hours + '小时';
+    }
+  } else {
+    const d = document.querySelector('[data-field="duration"]');
+    if (d) d.innerText = calcDuration();
+  }
+
+  // 保存表单（注意：student/teacher 不会被 autofill 覆盖）
+  saveForm();
+});
+/* ---------- end 一键填充修改 ---------- */
+
+window.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.key.toLowerCase() === 'e') {
+    e.preventDefault();
+    enterEdit();
+  }
+  if (e.ctrlKey && e.key.toLowerCase() === 's') {
+    e.preventDefault();
+    saveAll();
+  }
+  if (e.key === 'Escape' && isEditing) {
+    saveAll();
+  }
+});
+
+/* ------------ banner 图片持久化（无按钮，仅点击或拖拽图片更换） ------------ */
+const bannerImg = document.getElementById('bannerImg');
+const bannerFileInput = document.getElementById('bannerFileInput');
+const MAX_FILE_SIZE = 1024 * 1024 * 2; // 2MB 建议限制
+
+function loadBanner(){
+  try {
+    const saved = localStorage.getItem(BANNER_KEY);
+    if (saved && bannerImg) {
+      bannerImg.src = saved;
+    }
+  } catch (e) {
+    console.error('loadBanner error', e);
+  }
+}
+
+function setBannerDataUrl(dataUrl){
+  try {
+    localStorage.setItem(BANNER_KEY, dataUrl);
+  } catch (e) {
+    console.error('保存封面失败：', e);
+    alert('封面保存失败（可能超出浏览器存储限制）。请尝试较小的图片。');
+    return;
+  }
+  if (bannerImg) bannerImg.src = dataUrl;
+}
+
+/* 点击图片打开文件选择（UI 上没有按钮） */
+bannerImg.addEventListener('click', () => {
+  bannerFileInput.click();
+});
+
+bannerFileInput.addEventListener('change', (ev) => {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    alert('请选择图片文件');
+    return;
+  }
+  if (file.size > MAX_FILE_SIZE) {
+    if (!confirm('图片大小超过 2MB，可能无法保存到本地存储，仍要继续吗？')) {
+      bannerFileInput.value = '';
+      return;
+    }
+  }
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const dataUrl = e.target.result;
+    setBannerDataUrl(dataUrl);
+  };
+  reader.onerror = function(){
+    alert('读取图片失败');
+  };
+  reader.readAsDataURL(file);
+  bannerFileInput.value = '';
+});
+
+/* 支持拖拽替换图片 */
+bannerImg.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+bannerImg.addEventListener('drop', (e) => {
+  e.preventDefault();
+  const file = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    alert('请拖入图片文件');
+    return;
+  }
+  if (file.size > MAX_FILE_SIZE) {
+    if (!confirm('图片大小超过 2MB，可能无法保存到本地存储，仍要继续吗？')) {
+      return;
+    }
+  }
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    setBannerDataUrl(evt.target.result);
+  };
+  reader.onerror = function(){ alert('读取图片失败'); };
+  reader.readAsDataURL(file);
+});
+
+window.addEventListener('load', () => {
+  loadForm();
+  refreshDuration();
+  // banner 会在 loadForm -> loadBanner 中加载 persisted 内容
+});
+</script>
+</body>
+</html>
